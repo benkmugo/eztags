@@ -30,6 +30,8 @@ The following example lists all the parameters you can use with the operator:
 )}
 ```
 
+Tag cloud can be used with Solr or with MySQL. If eZ Find is installed and correctly configured, operator will use Solr by default. This can be turned off in `eztags.ini`.
+
 ## Template fetch functions
 
 eZ Tags comes bundled with custom fetch functions used to fetch tags in various ways.
@@ -58,6 +60,14 @@ This fetch function returns the tag with specified remote ID:
 {def $tag = fetch( tags, tag_by_remote_id, hash( 'remote_id', '1143ae02e8c0995ccd15a1847e886328' ) )}
 ```
 
+### tags/tag_by_url
+
+This fetch function returns the tag with specified URI part which comes after the `/tags/view/` part:
+
+```
+{def $tag = fetch( tags, tag_by_url, hash( 'url', 'Countries/Croatia' ) )}
+```
+
 ### tags/latest_tags
 
 This fetch function returns the latest tags added to eZ Publish:
@@ -78,9 +88,9 @@ You can use optional `parent_tag_id` paremeter to limit the fetch to a certain t
 
 These fetch functions can be used to fetch a list of tags under a specified tag. There is only one difference between `list` and `tree` fetches. While `list` fetch returns tags only on first level below the specified tag, `tree` fetch returns tags from the whole subtree.
 
-The parameters of these fetches are as follows (only `parent_node_id` is required):
+The parameters of these fetches are as follows (only `parent_tag_id` is required):
 
-* `parent_node_id`: Returns the tags only below the specified tag
+* `parent_tag_id`: Returns the tags only below the specified tag
 * `sort_by`: Array that specifies the desired sorting and ordering of tags. Possible values for sorting are `id`, `parent_id`, `main_tag_id`, `keyword`, `depth`, `path_string`, `modified` and `remote_id` and for ordering `true()` (ascending) and `false()` (descending)
 * `offset`: Start position for fetching tags
 * `limit`: Limits the number of fetched tags
@@ -114,7 +124,7 @@ The following example shows the `tree` fetch with all the parameters included:
 
 These fetch functions can be used to fetch the count of tags under a specified tag. There is only one difference between `list_count` and `tree_count` fetches. While `list_count` fetch returns the count of tags only on first level below the specified tag, `tree_count` fetch returns the count of tags from the whole subtree.
 
-The parameters of these fetches are `parent_node_id`, `depth`, `depth_operator` and `include_synonyms`. Only `parent_node_id` is required and they all have the same meaning and possible values as matching parameters in `tags/list` and `tags/tree` fetches.
+The parameters of these fetches are `parent_tag_id`, `depth`, `depth_operator` and `include_synonyms`. Only `parent_tag_id` is required and they all have the same meaning and possible values as matching parameters in `tags/list` and `tags/tree` fetches.
 
 The following example shows the `tree_count` fetch with all the parameters included:
 
@@ -130,14 +140,23 @@ The following example shows the `tree_count` fetch with all the parameters inclu
 )}
 ```
 
-## Extended attribute filter
+### `language` parameter in fetches
 
-Since `eztags` datatype does not support sorting and filtering in attribute filters in `content/list` and `content/tree` fetches, an extended attribute filter is implemented to allow you to fetch the content which has specified tags attached to it.
+All fetches shown above have an additional parameter called `language` which, if defined, fetches tags in specified language. All other tags (that don't have a translation specified by the parameter) are left out. The parameter is not required and if not defined, fetches will return tags in languages specified in `RegionalSettings/SiteLanguageList` configuration of `site.ini`.
+
+The language parameter can be a string ( `cro-HR` for example ) or an array ( `array( 'cro-HR', 'eng-GB' )` for example ).
+
+## Extended attribute filters
+
+Since `eztags` datatype does not support sorting and filtering in attribute filters in `content/list` and `content/tree` fetches, extended attribute filters are implemented to allow you to fetch the content which has specified tags attached to it.
+
+Two extended attribute filters are implemented, one that fetches content objects that have all of defined tags attached to them, and one that fetches content objects that have at least one of the defined tags attached to them.
 
 The parameters of the extended attribute filter are:
 
 * `tag_id`: integer or array of integers. Defines that the content needs to have at least one of the specified tags attached to it
 * `include_synonyms`: Specifies will the synonyms of the specified tags be taken into consideration. Defaults to false
+* `language`: Defines that only tags in specified languages will be returned. As with fetches, can be string or an array
 
 Example usage:
 
@@ -158,3 +177,5 @@ Example usage:
 ```
 
 This example returns all content directly below the node with ID = 2 that has either tag with ID = 42, or tag with ID = 24 or one of their synonyms attached to it.
+
+The second extended attribute filter differs only in name. So instead of `TagsAttributeFilter`, you would use `TagsAttributeAndFilter` to return all content that has both, tags with IDs 42 and 24 or their synonyms attached to it.
